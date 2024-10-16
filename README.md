@@ -8,3 +8,11 @@ python -m venv email-cleanup
 pip install -r requirements.txt
 deactivate
 ```
+
+## Improvements
+
+- [ ] Add .env file to store target field name or argument
+- [ ] Add feature to define the csv separator mode "," or ";" [currently only ";" is supported]
+- [ ] Add feature to check entry file mode (csv, xlsx) [currently only csv is supported]
+- [ ] Add feature to check set output file mode (csv, xlsx) [currently only xlsx is supported]
+- [ ] Separate the unwanted_terms variable into a file

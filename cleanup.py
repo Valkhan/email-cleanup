@@ -94,9 +94,9 @@ def process_email_file(input_file, output_file, trusted_providers):
         print(f"Erro ao ler o arquivo: {e}")
         return
 
-    # Verificar se a coluna "correio_eletronico" existe
-    if 'correio_eletronico' not in df.columns:
-        print("A coluna 'correio_eletronico' não foi encontrada no arquivo.")
+    # Verificar se a coluna "email" existe
+    if 'email' not in df.columns:
+        print("A coluna 'email' não foi encontrada no arquivo.")
         return
 
     # Total de registros
@@ -135,13 +135,13 @@ def process_email_file(input_file, output_file, trusted_providers):
         # Filtra emails para o lote atual
         start_time = datetime.now()  # Registra a hora de início
         print(f"Início: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-        batch_filtered = df.iloc[start_index:end_index]['correio_eletronico'].apply(filter_emails)
+        batch_filtered = df.iloc[start_index:end_index]['email'].apply(filter_emails)
         filtered_batch = df.iloc[start_index:end_index][batch_filtered]
         
-        # Tratamento do campo correio_eletronico
-        if 'correio_eletronico' in filtered_batch.columns:
-            filtered_batch['correio_eletronico'] = (
-                filtered_batch['correio_eletronico']
+        # Tratamento do campo email
+        if 'email' in filtered_batch.columns:
+            filtered_batch['email'] = (
+                filtered_batch['email']
                 .str.lower()  # Converte para minúsculas
                 .str.strip()  # Remove espaços em branco
                 .str.replace(r'\.$', '', regex=True)  # Remove o ponto no final
