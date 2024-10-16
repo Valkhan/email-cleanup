@@ -89,7 +89,10 @@ def process_email_file(input_file, output_file, trusted_providers):
 
     # Ler o arquivo CSV
     try:
-        df = pd.read_csv(input_file, delimiter=';', skip_blank_lines=True)
+        df = pd.read_csv(input_file, delimiter=';', encoding='utf-8')  # Primeira tentativa com utf-8
+    except UnicodeDecodeError:
+        print("Erro ao ler o arquivo com codificação UTF-8, tentando com ISO-8859-1...")
+        df = pd.read_csv(input_file, delimiter=';', encoding='ISO-8859-1')  # Segunda tentativa com ISO-8859-1
     except Exception as e:
         print(f"Erro ao ler o arquivo: {e}")
         return
