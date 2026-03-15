@@ -8,11 +8,15 @@ import math
 from datetime import datetime  # Importa a biblioteca datetime
 
 # Função para verificar se o email é válido
+
+
 def is_valid_email(email):
     email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(email_regex, email) is not None
 
 # Função para remover emails com termos indesejados
+
+
 def contains_unwanted_terms(email, unwanted_terms):
     for term in unwanted_terms:
         if term.lower() in email.lower():
@@ -20,11 +24,15 @@ def contains_unwanted_terms(email, unwanted_terms):
     return False
 
 # Função para validar a sintaxe do domínio
+
+
 def validate_domain_syntax(domain):
     domain_regex = r'^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z]{2,})+$'
     return re.match(domain_regex, domain) is not None
 
 # Função para carregar provedores confiáveis de um arquivo JSON
+
+
 def load_trusted_providers(filename):
     try:
         with open(filename, 'r') as file:
@@ -34,10 +42,14 @@ def load_trusted_providers(filename):
         return []
 
 # Função para verificar se o domínio é de um provedor confiável
+
+
 def is_trusted_provider(domain, trusted_providers):
     return domain.lower() in trusted_providers
 
 # Função para verificar se o domínio tem um registro DNS válido
+
+
 def has_valid_dns_record(domain):
     try:
         dns.resolver.resolve(domain, 'A')
@@ -46,6 +58,8 @@ def has_valid_dns_record(domain):
         return False
 
 # Função para verificar se o domínio tem um registro MX válido
+
+
 def has_valid_mx_record(domain):
     try:
         dns.resolver.resolve(domain, 'MX')
@@ -54,9 +68,11 @@ def has_valid_mx_record(domain):
         return False
 
 # Função para validar o domínio com cache
+
+
 def validate_domain(domain, trusted_providers, cacheDNS):
     domain = domain.strip().lower()
-    
+
     # Verifica se o domínio está no cache
     if domain in cacheDNS:
         return cacheDNS[domain]
@@ -67,32 +83,57 @@ def validate_domain(domain, trusted_providers, cacheDNS):
         'dns': False,
         'mx': False
     }
-    
+
     if validation_result['domain_syntax']:
-        validation_result['trustedProvider'] = is_trusted_provider(domain, trusted_providers)
-        
+        validation_result['trustedProvider'] = is_trusted_provider(
+            domain, trusted_providers)
+
         if validation_result['trustedProvider']:
             validation_result['dns'] = True
             validation_result['mx'] = True
         else:
-            validation_result['mx'] = has_valid_dns_record(domain)
-            if validation_result['mx']:
-                validation_result['dns'] = has_valid_mx_record(domain)
+            validation_result['dns'] = has_valid_dns_record(domain)
+            if validation_result['dns']:
+                validation_result['mx'] = has_valid_mx_record(domain)
 
     # Armazena o resultado no cache
     cacheDNS[domain] = validation_result
     return validation_result
 
+
 def process_email_file(input_file, output_file, trusted_providers):
     # Termos indesejados
-    unwanted_terms = ['contato', 'administra', 'juridico', 'admin@', 'contab', 'falecom', 'financeiro', 'webmaster']
+    unwanted_terms = [
+        'contato',
+        'administra',
+        'juridico',
+        'admin@',
+        'contab',
+        'falecom',
+        'financeiro',
+        'webmaster',
+        'admin',
+        'support',
+        'info',
+        'contact',
+        'sales',
+        'billing',
+        'abuse',
+        'security',
+        'postmaster',
+        'responder',
+        'noreply',
+        'no-reply'
+    ]
 
     # Ler o arquivo CSV
     try:
-        df = pd.read_csv(input_file, delimiter=';', encoding='utf-8')  # Primeira tentativa com utf-8
+        # Primeira tentativa com utf-8
+        df = pd.read_csv(input_file, delimiter=';', encoding='utf-8')
     except UnicodeDecodeError:
         print("Erro ao ler o arquivo com codificação UTF-8, tentando com ISO-8859-1...")
-        df = pd.read_csv(input_file, delimiter=';', encoding='ISO-8859-1')  # Segunda tentativa com ISO-8859-1
+        # Segunda tentativa com ISO-8859-1
+        df = pd.read_csv(input_file, delimiter=';', encoding='ISO-8859-1')
     except Exception as e:
         print(f"Erro ao ler o arquivo: {e}")
         return
@@ -124,7 +165,8 @@ def process_email_file(input_file, output_file, trusted_providers):
 
         if is_valid_email(email) and not contains_unwanted_terms(email, unwanted_terms):
             domain = email.split('@')[-1]
-            domain_validation = validate_domain(domain, trusted_providers, cacheDNS)
+            domain_validation = validate_domain(
+                domain, trusted_providers, cacheDNS)
             return domain_validation['domain_syntax'] and (domain_validation['trustedProvider'] or domain_validation['mx'] or domain_validation['dns'])
         return False
 
@@ -133,14 +175,16 @@ def process_email_file(input_file, output_file, trusted_providers):
         start_index = batch_num * batch_size
         end_index = min(start_index + batch_size, total_records)
 
-        print(f"Processando lote {batch_num + 1}/{num_batches} (registros {start_index + 1} a {end_index})...")
+        print(
+            f"Processando lote {batch_num + 1}/{num_batches} (registros {start_index + 1} a {end_index})...")
 
         # Filtra emails para o lote atual
         start_time = datetime.now()  # Registra a hora de início
         print(f"Início: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-        batch_filtered = df.iloc[start_index:end_index]['email'].apply(filter_emails)
+        batch_filtered = df.iloc[start_index:end_index]['email'].apply(
+            filter_emails)
         filtered_batch = df.iloc[start_index:end_index][batch_filtered]
-        
+
         # Tratamento do campo email
         if 'email' in filtered_batch.columns:
             filtered_batch['email'] = (
@@ -160,16 +204,19 @@ def process_email_file(input_file, output_file, trusted_providers):
                 last_row = existing_df.shape[0]
                 # Escreve a partir da última linha + 1
                 with pd.ExcelWriter(output_file, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
-                    filtered_batch.to_excel(writer, index=False, header=False, startrow=last_row)
+                    filtered_batch.to_excel(
+                        writer, index=False, header=False, startrow=last_row)
             else:
                 # Salva pela primeira vez
-                filtered_batch.to_excel(output_file, index=False)  # Salva a primeira vez
-        
+                # Salva a primeira vez
+                filtered_batch.to_excel(output_file, index=False)
+
         end_time = datetime.now()  # Registra a hora de término
         print(f"Término: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
     # Exibir mensagem final
     print(f"Processamento concluído! Arquivo final salvo em: {output_file}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
