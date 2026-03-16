@@ -150,12 +150,24 @@ def process_email_file(input_file, output_file, trusted_providers):
     # Cache de DNS
     cacheDNS = {}
 
+    # Acumula lotes filtrados para escrita final (evita reabrir/ler o arquivo várias vezes)
+    filtered_batches = []
+
     # Lote de processamento
     batch_size = max(1, total_records // 50)  # Divide em no máximo 50 lotes
     num_batches = math.ceil(total_records / batch_size)
 
     # Filtrar os emails válidos, sem termos indesejados e que têm domínio válido
     def filter_emails(email):
+        # Ignora valores ausentes ou não-textuais
+        if not isinstance(email, str):
+            return False
+
+        # Remove espaços em branco no início/fim
+        email = email.strip()
+        if email == "":
+            return False
+
         # Verificar se a string termina com . e remover o ponto
         if email.endswith('.'):
             email = email[:-1]
@@ -194,25 +206,17 @@ def process_email_file(input_file, output_file, trusted_providers):
                 .str.replace(r'\.$', '', regex=True)  # Remove o ponto no final
             )
 
-        # Salva o arquivo de saída após processar o lote
+        # Acumula os resultados para gravar no final
         if not filtered_batch.empty:
-            if os.path.exists(output_file):
-                # Lê o arquivo existente
-                existing_df = pd.read_excel(output_file)
-
-                # Obter o índice da última linha preenchida
-                last_row = existing_df.shape[0]
-                # Escreve a partir da última linha + 1
-                with pd.ExcelWriter(output_file, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
-                    filtered_batch.to_excel(
-                        writer, index=False, header=False, startrow=last_row)
-            else:
-                # Salva pela primeira vez
-                # Salva a primeira vez
-                filtered_batch.to_excel(output_file, index=False)
+            filtered_batches.append(filtered_batch)
 
         end_time = datetime.now()  # Registra a hora de término
         print(f"Término: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # Grava o arquivo de saída (uma vez, após processar todos os lotes)
+    if filtered_batches:
+        result_df = pd.concat(filtered_batches, ignore_index=True)
+        result_df.to_excel(output_file, index=False)
 
     # Exibir mensagem final
     print(f"Processamento concluído! Arquivo final salvo em: {output_file}")
